@@ -4,10 +4,14 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 
+import com.jasondavidpeters.blockbreaker.world.Level;
+
 public class Game implements Runnable {
 
 	private Thread thread;
 	private boolean running;
+	
+	private Level level;
 
 	private GameWindow gameWindow;
 
@@ -43,7 +47,7 @@ public class Game implements Runnable {
 		double delta = 0;
 		int ticks = 0;
 		int frames = 0;
-
+		level = new Level(gameWindow);
 		while (running) {
 			now = System.nanoTime();
 			delta += (now - before) / ns;
@@ -65,7 +69,7 @@ public class Game implements Runnable {
 	}
 
 	public void tick() {
-
+		level.tick();
 	}
 
 	public void render() {
@@ -75,8 +79,9 @@ public class Game implements Runnable {
 			bs = gameWindow.getBufferStrategy();
 		}
 		Graphics g = bs.getDrawGraphics();
-		g.setColor(Color.GRAY);
+		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, GameWindow.WIDTH * GameWindow.SCALE, GameWindow.WIDTH * GameWindow.SCALE);
+		level.render(g);
 		bs.show();
 		g.dispose();
 	}
