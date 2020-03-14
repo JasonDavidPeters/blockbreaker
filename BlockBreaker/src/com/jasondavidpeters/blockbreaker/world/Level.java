@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import com.jasondavidpeters.blockbreaker.GameWindow;
 import com.jasondavidpeters.blockbreaker.entity.Ball;
 import com.jasondavidpeters.blockbreaker.entity.Player;
+import com.jasondavidpeters.blockbreaker.gameobject.Block;
 import com.jasondavidpeters.blockbreaker.input.Keyboard;
 
 public class Level {
@@ -14,22 +15,50 @@ public class Level {
 	private Ball ball;
 	private Keyboard keyboard;
 
+	private Block[] blocks = new Block[500];
+
 	private boolean gameStart;
 	private boolean setDir;
+	private int blockY = 0;
+	private int blockX = 0;
+	private int blockWidthAndSpacing = 20; // width and spacing between the blocks
 
 	public Level(GameWindow gw) {
 		keyboard = new Keyboard();
 		ball = new Ball((GameWindow.WIDTH * GameWindow.SCALE) / 2, GameWindow.HEIGHT, 15, 15, 5);
-		player = new Player((GameWindow.WIDTH * GameWindow.SCALE) / 2, (GameWindow.HEIGHT * GameWindow.SCALE) - 100, 75, 1, Color.WHITE, 2);
+		player = new Player((GameWindow.WIDTH * GameWindow.SCALE) / 2, (GameWindow.HEIGHT * GameWindow.SCALE) - 100, 75, 1, Color.WHITE, 10);
+
+		for (int i = 0; i < blocks.length; i++) {
+			int xx = (((GameWindow.WIDTH * GameWindow.SCALE)) / blockWidthAndSpacing);
+			if ((i % new Float(xx)) == 0) {
+				blockY += blockWidthAndSpacing;
+				blockX = 0;
+			}
+
+			blockX++;
+			blocks[i] = new Block(xx * blockX, blockY, blockWidthAndSpacing, 10, Color.WHITE);
+			if (blockY >= (GameWindow.HEIGHT * GameWindow.SCALE) / 2) // do not allow any blocks through half of game window
+				break;
+
+		}
+
 		gw.addKeyListener(keyboard);
+	}
+	
+	private void hitBlock() {
+		for (Block b: blocks) {
+			if (ball.getY() <= b.getY()+(b.getHeight()/2) && ball.getY() >= b.getY()-(b.getHeight()/2)) { // on same Y-level as block
+				if (ball.getX() >= b.getX()-(b.getWidth()/2) && ball.getX() <= b.getX()+(b.getWidth()/2)) {
+					b.setAlive(false);
+					b.setX(-1,-1);
+					changeDirection();
+				}
+				
+			}
+		}
 	}
 
 	private void ballCollision() {
-		/*
-		 * if ball.getHeight >= player.getHeight() && ball.getX() >=
-		 * player.getX()+player.getWidth() || ball.getX() <=
-		 * player.getX()-player.getWidth()
-		 */
 
 		if ((ball.getY() + (ball.getHeight() / 2)) >= player.getY() && (ball.getY() - (ball.getHeight() / 2)) <= player.getY()) { // ball is at same level as player
 			if (ball.getX() >= (player.getX() + (player.getWidth() / 2) - ball.getWidth()) && ball.getX() <= player.getX() + (player.getWidth() / 3) * 2) { // ball hits middle of player
@@ -37,17 +66,19 @@ public class Level {
 			}
 
 			// Ball colliding with left side of player
-			if (ball.getX() >= player.getX() && ball.getX() <= player.getX() + (player.getWidth() / 2)) {
+			if (ball.getX() >= player.getX() && ball.getX() <= player.getX() + (player.getWidth() / 2)) { // Ball colliding with left side of player
 				ball.setDirection("upleft");
 			}
-		}
-		// Ball colliding with right side of player
 
-		if (ball.getY() - ball.getHeight() / 2 <= 0 || ball.getY() + ball.getHeight() / 2 >= (GameWindow.HEIGHT * GameWindow.SCALE) - ball.getHeight()*2) {
+			if (ball.getX() >= player.getX() + (player.getWidth() / 2) && ball.getX() <= player.getX() + (player.getWidth())) { // Ball colliding with right side of player
+				ball.setDirection("upright");
+			}
+		}
+
+		if (ball.getY() - ball.getHeight() / 2 <= 0 || ball.getY() + ball.getHeight() / 2 >= (GameWindow.HEIGHT * GameWindow.SCALE) - ball.getHeight() * 2) {
 			changeDirection();
 		}
-		if (ball.getX() >= (GameWindow.WIDTH * GameWindow.SCALE)) {
-			// if its moving upwards then keep it going upwards
+		if (ball.getX() >= (GameWindow.WIDTH * GameWindow.SCALE) - ball.getWidth()) {
 
 			if (ball.getDirection()[2])
 				ball.setDirection("upleft");
@@ -123,6 +154,8 @@ public class Level {
 			}
 		}
 		ballCollision();
+		hitBlock();
+			
 		/*
 		 * Logic of ball- facingdirection = south y++;, north y-- if ball hits player on
 		 * left side then x-- if ball hits player on right side then x++
@@ -134,6 +167,14 @@ public class Level {
 		g.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
 		g.setColor(ball.getColor());
 		g.fillOval(ball.getX(), ball.getY(), ball.getWidth(), ball.getHeight());
+		for (Block b : blocks) {
+			if (b == null)
+				break;
+			if (b.isAlive()) {
+				g.setColor(b.getColor());
+				g.fillRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+			}
+		}
 	}
 
 }
